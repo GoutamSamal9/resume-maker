@@ -1,38 +1,28 @@
-import pdfDocuments from 'pdfkit';
+import PDFDocument from 'pdfkit';
 
 export async function handler (event, context, callback) {
-
   const makePDF = async () => {
+    const doc = new PDFDocument();
+    doc.fontSize(25).text('Hello World!');
+    // doc.font('data/Helvetica.afm');
+    return doc;
+  };
 
-    return new Promise(resolve => {
-      const doc = new pdfDocuments()
-  
-      doc.fontSize(24)
-      .text('Hello World!', 100, 100);
-  
-      // doc.addPage({
-      //   margins: {
-      //     top: 50,
-      //     bottom: 50,
-      //     left: 62,
-      //     right: 72
-      //   },
-      //   size: 'A4',
-      //   layout: 'portrait'
-      // })
-  
-      
-      const buffers = []
-      doc.on('data', buffers.push.bind(buffers))
-      doc.on('end', () => {
-        const pdf = Buffer.concat(buffers)
-        resolve(pdf)
-      })
-      doc.end()
-    })
-  }
+  const doc = await makePDF();
+  const chunks = [];
+  let stream = doc.pipe({
+    write(chunk) {
+      chunks.push(chunk);
+    },
+    end() {
+      callback(null, Buffer.concat(chunks));
+    },
+  });
 
-  const stream = await makePDF()
+  stream.on('error', (err) => {
+    callback(err);
+  });
+
   const response = {
     statusCode: 200,
     headers: {
@@ -45,9 +35,9 @@ export async function handler (event, context, callback) {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment;filename=invoice.pdf`
     },
-    body: stream.toString('base64'),
+    body: Buffer.concat(chunks).toString('base64'),
     isBase64Encoded: true
-  }
+  };
 
-  return response
+  return response;
 }

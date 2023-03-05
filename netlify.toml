@@ -4,7 +4,6 @@ command = "yarn build"
   functions = "functions"
 
   [functions]
-  included_files = ["src/functions/**/*"]
+  included_files = ["/functions/data/*"]
   directory = "functions"
   node_bundler = "esbuild"
-  external_node_modules = ["import-fresh"]
